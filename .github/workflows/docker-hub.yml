@@ -53,7 +53,7 @@ jobs:
           context: .
           push: true
           tags: |
-            walkcat/gcp-graph-server:latest
-            walkcat/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
+            v1xingyue/gcp-graph-server:latest
+            v1xingyue/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
