@@ -3,6 +3,9 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl
+
 # Copy package files
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
@@ -26,6 +29,9 @@ RUN pnpm build
 FROM node:20-slim
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl
 
 # Copy package files and prisma schema
 COPY package*.json ./
