@@ -6,39 +6,33 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # 如果你有环境级别的 secrets，取消下面的注释并指定环境名称
+    # environment: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Debug secrets
+      - name: List available secrets (不会显示实际值)
         run: |
-          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
-            echo "DOCKERHUB_USERNAME is not set or empty"
-            exit 1
-          else
-            echo "DOCKERHUB_USERNAME is set"
-          fi
+          echo "可用的 secrets 列表（只显示名称，不显示值）："
+          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' && '已设置' || '未设置' }}"
+          echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME != '' && '已设置' || '未设置' }}"
+          echo "DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' && '已设置' || '未设置' }}"
 
-          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
-            echo "DOCKERHUB_TOKEN is not set or empty"
-            exit 1
-          else
-            echo "DOCKERHUB_TOKEN is set"
-          fi
-
-      - name: Generate build timestamp
-        id: timestamp
-        run: echo "timestamp=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
-
+      # 使用固定的用户名
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: walkcat
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate build timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -46,7 +40,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
+            walkcat/gcp-graph-server:latest
+            walkcat/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
