@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model DailyPoint {
+  id           Int      @id @default(autoincrement())
+  user_id      String
+  stake_usd    Float
+  debt_usd     Float
+  blend_lend   Float
+  blend_borrow Float
+  yuzu_lend    Float
+  yuzu_borrow  Float
+  blend_point  Float
+  yuzu_point   Float
+  send_date    String
+  last_time    DateTime @default(now())
+
+  @@unique([user_id, send_date])
+  @@index([user_id])
+  @@index([last_time])
+}
+
+model UserSummary {
+  id           Int      @id @default(autoincrement())
+  user_id      String   @unique
+  blend_lend   Float
+  blend_borrow Float
+  yuzu_lend    Float
+  yuzu_borrow  Float
+  blend_point  Float
+  yuzu_point   Float
+  last_time    DateTime @default(now())
+
+  @@index([user_id])
+  @@index([last_time])
+  @@index([blend_point])
+  @@index([yuzu_point])
+} 
