@@ -27,21 +27,19 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and prisma schema
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
+COPY prisma ./prisma
 
 # Install pnpm
 RUN npm install -g pnpm
 
-# Install production dependencies and Prisma as a development dependency
-RUN pnpm install --prod && \
-    pnpm add -D prisma@5.10.0
+# Copy node_modules from builder to avoid reinstalling
+COPY --from=builder /app/node_modules ./node_modules
 
-# Copy prisma schema and generated client
-COPY prisma ./prisma
+# Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
 
 # Expose the port the app runs on
 EXPOSE 8080
