@@ -30,7 +30,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
+            walkcat/gcp-graph-server:latest
+            walkcat/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
