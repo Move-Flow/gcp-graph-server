@@ -1,9 +1,8 @@
-
+import { describe, it } from "mocha";
 import assert from "assert";
 
-describe("add function", function () {
-  it("should return the sum of two numbers", function () {
-    assert.strictEqual(1 + 2, 3);
+describe("Example Test", () => {
+  it("should pass", () => {
+    assert.strictEqual(1 + 1, 2);
   });
-}); 
-
+});

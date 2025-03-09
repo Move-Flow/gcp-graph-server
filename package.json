@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
     "mocha": "^11.1.0",
     "prisma": "^5.10.0",
