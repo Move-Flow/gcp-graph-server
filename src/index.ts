@@ -7,6 +7,10 @@ import cors from "cors";
 import { typeDefs } from "./schema";
 import { resolvers } from "./resolvers";
 import { PrismaClient } from "@prisma/client";
+import {
+  diagnoseDatabaseConnection,
+  formatDiagnosticInfo,
+} from "./utils/diagnostics";
 
 // Load environment variables
 config();
@@ -80,7 +84,15 @@ async function startServer() {
       // Log the error
       logger.error("Database connection error:", error);
 
-      // Return error response
+      // 运行诊断
+      const diagnosticInfo = await diagnoseDatabaseConnection();
+      logger.info("Database connection diagnostic:", diagnosticInfo);
+
+      // 格式化诊断信息用于日志
+      const formattedDiagnostic = formatDiagnosticInfo(diagnosticInfo);
+      logger.info("\n" + formattedDiagnostic);
+
+      // Return error response with diagnostic information
       res.status(500).json({
         status: "error",
         message: "Server is running but database connection failed",
@@ -98,9 +110,40 @@ async function startServer() {
           instance_name:
             process.env.INSTANCE_CONNECTION_NAME || "Not configured",
         },
+        diagnostics: diagnosticInfo,
         version: "1.0.0",
         environment: process.env.NODE_ENV || "development",
       });
+    }
+  });
+
+  // 添加诊断端点
+  app.get("/diagnostics", async (req, res) => {
+    try {
+      const diagnosticInfo = await diagnoseDatabaseConnection();
+      res.status(200).json(diagnosticInfo);
+    } catch (error: any) {
+      res.status(500).json({
+        status: "error",
+        message: "Failed to run diagnostics",
+        error: {
+          message: error.message,
+          stack:
+            process.env.NODE_ENV === "production" ? undefined : error.stack,
+        },
+      });
+    }
+  });
+
+  // 添加文本格式的诊断端点
+  app.get("/diagnostics/text", async (req, res) => {
+    try {
+      const diagnosticInfo = await diagnoseDatabaseConnection();
+      const formattedOutput = formatDiagnosticInfo(diagnosticInfo);
+      res.setHeader("Content-Type", "text/plain");
+      res.status(200).send(formattedOutput);
+    } catch (error: any) {
+      res.status(500).send(`Error running diagnostics: ${error.message}`);
     }
   });
 
@@ -109,6 +152,12 @@ async function startServer() {
     logger.info(`🚀 Server ready at http://localhost:${port}/graphql`);
     logger.info(`Health check available at http://localhost:${port}/health`);
     logger.info(`Default route with DB status at http://localhost:${port}/`);
+    logger.info(
+      `Diagnostics available at http://localhost:${port}/diagnostics`
+    );
+    logger.info(
+      `Text diagnostics available at http://localhost:${port}/diagnostics/text`
+    );
   });
 }
 
