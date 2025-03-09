@@ -41,6 +41,13 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
+# Set default environment variables
+ENV PORT=8080
+ENV NODE_ENV=production
+ENV INSTANCE_CONNECTION_NAME=level-poetry-395302:us-central1:moveflow
+# 注意：不要在 Dockerfile 中设置敏感信息如密码
+# 这些应该在部署时通过 Cloud Run 设置
+
 # Expose the port the app runs on
 EXPOSE 8080
 
