@@ -57,3 +57,30 @@ jobs:
             v1xingyue/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+    outputs:
+      timestamp: ${{ steps.timestamp.outputs.timestamp }}
+
+  print-image-info:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: "default"
+
+    steps:
+      - name: Print Image Information
+        run: |
+          echo "=============================================="
+          echo "           Docker 镜像推送成功！              "
+          echo "=============================================="
+          echo "镜像名称: v1xingyue/gcp-graph-server"
+          echo "镜像标签:"
+          echo "  - latest"
+          echo "  - ${{ needs.build-and-push.outputs.timestamp }}"
+          echo ""
+          echo "Docker Hub 地址:"
+          echo "https://hub.docker.com/r/v1xingyue/gcp-graph-server/tags"
+          echo ""
+          echo "拉取命令:"
+          echo "docker pull v1xingyue/gcp-graph-server:latest"
+          echo "docker pull v1xingyue/gcp-graph-server:${{ needs.build-and-push.outputs.timestamp }}"
+          echo "=============================================="
