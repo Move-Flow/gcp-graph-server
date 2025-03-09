@@ -31,16 +31,24 @@ function getDatabaseInfo() {
 
   // 在生产环境中，不使用 DATABASE_URL，而是使用单独的环境变量
   if (isProduction) {
+    // 修正 connection string 拼接逻辑，确保格式正确
+    const connectionString = `postgresql://${
+      process.env.DB_USER || "unknown"
+    }:${process.env.DB_PASS || "password"}@localhost/${
+      process.env.DB_NAME || "unknown"
+    }?host=/cloudsql/${process.env.INSTANCE_CONNECTION_NAME || "unknown"}`;
+
+    // 返回信息时隐藏密码
+    const maskedConnectionString = connectionString.replace(
+      /:[^:@]+@/,
+      ":****@"
+    );
+
     return {
       user: process.env.DB_USER || "unknown",
       database: process.env.DB_NAME || "unknown",
       instanceName: process.env.INSTANCE_CONNECTION_NAME || "unknown",
-      // 不包含密码
-      connectionString: `postgresql://${
-        process.env.DB_USER || "unknown"
-      }:****@localhost/${process.env.DB_NAME || "unknown"}?host=/cloudsql/${
-        process.env.INSTANCE_CONNECTION_NAME || "unknown"
-      }`,
+      connectionString: maskedConnectionString,
     };
   } else {
     // 非生产环境，仍然使用 DATABASE_URL 但隐藏密码
@@ -53,8 +61,30 @@ function getDatabaseInfo() {
   }
 }
 
-// Initialize Prisma client
-const prisma = new PrismaClient();
+// 获取数据库连接字符串（包含密码，仅用于内部连接）
+function getDatabaseUrl() {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction) {
+    // 在生产环境中，使用单独的环境变量构建连接字符串
+    return `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@localhost/${process.env.DB_NAME}?host=/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+  } else {
+    // 在非生产环境中，使用 DATABASE_URL 环境变量
+    return process.env.DATABASE_URL;
+  }
+}
+
+// Initialize Prisma client with the correct connection string
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: getDatabaseUrl(),
+    },
+  },
+});
+
+// Log database connection information (without sensitive data)
+logger.info(`Database connection info: ${JSON.stringify(getDatabaseInfo())}`);
 
 // Define types for database query result
 interface DbTimestamp {
