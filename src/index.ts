@@ -25,6 +25,34 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 
+// 安全地获取数据库连接信息，不直接暴露完整的 DATABASE_URL
+function getDatabaseInfo() {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // 在生产环境中，不返回完整的 DATABASE_URL，而是返回组成部分
+  if (isProduction) {
+    return {
+      user: process.env.DB_USER || "unknown",
+      database: process.env.DB_NAME || "unknown",
+      instanceName: process.env.INSTANCE_CONNECTION_NAME || "unknown",
+      // 不包含密码
+      connectionString: `postgresql://${
+        process.env.DB_USER || "unknown"
+      }:****@localhost/${process.env.DB_NAME || "unknown"}?host=/cloudsql/${
+        process.env.INSTANCE_CONNECTION_NAME || "unknown"
+      }`,
+    };
+  } else {
+    // 非生产环境，仍然隐藏密码
+    return {
+      connectionString: process.env.DATABASE_URL
+        ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
+        : "Not configured",
+      instanceName: process.env.INSTANCE_CONNECTION_NAME || "Not configured",
+    };
+  }
+}
+
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
@@ -64,6 +92,9 @@ async function startServer() {
       // Test database connection
       const result = await prisma.$queryRaw<DbTimestamp[]>`SELECT NOW()`;
 
+      // 获取安全的数据库信息
+      const dbInfo = getDatabaseInfo();
+
       // Return success response
       res.status(200).json({
         status: "ok",
@@ -71,11 +102,7 @@ async function startServer() {
         database: {
           connected: true,
           timestamp: result[0].now,
-          connection_string: process.env.DATABASE_URL
-            ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
-            : "Not configured",
-          instance_name:
-            process.env.INSTANCE_CONNECTION_NAME || "Not configured",
+          ...dbInfo,
         },
         version: "1.0.0",
         environment: process.env.NODE_ENV || "development",
@@ -92,6 +119,9 @@ async function startServer() {
       const formattedDiagnostic = formatDiagnosticInfo(diagnosticInfo);
       logger.info("\n" + formattedDiagnostic);
 
+      // 获取安全的数据库信息
+      const dbInfo = getDatabaseInfo();
+
       // Return error response with diagnostic information
       res.status(500).json({
         status: "error",
@@ -104,13 +134,12 @@ async function startServer() {
             stack:
               process.env.NODE_ENV === "production" ? undefined : error.stack,
           },
-          connection_string: process.env.DATABASE_URL
-            ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
-            : "Not configured",
-          instance_name:
-            process.env.INSTANCE_CONNECTION_NAME || "Not configured",
+          ...dbInfo,
         },
-        diagnostics: diagnosticInfo,
+        diagnostics:
+          process.env.NODE_ENV === "production"
+            ? { analysis: diagnosticInfo.analysis } // 生产环境只返回分析结果
+            : diagnosticInfo, // 非生产环境返回完整诊断信息
         version: "1.0.0",
         environment: process.env.NODE_ENV || "development",
       });
@@ -121,6 +150,22 @@ async function startServer() {
   app.get("/diagnostics", async (req, res) => {
     try {
       const diagnosticInfo = await diagnoseDatabaseConnection();
+
+      // 在生产环境中，过滤掉敏感信息
+      if (process.env.NODE_ENV === "production") {
+        // 移除或模糊化敏感信息
+        if (
+          diagnosticInfo.env_variables &&
+          diagnosticInfo.env_variables.DATABASE_URL
+        ) {
+          diagnosticInfo.env_variables.DATABASE_URL =
+            diagnosticInfo.env_variables.DATABASE_URL.replace(
+              /:[^:@]+@/,
+              ":****@"
+            );
+        }
+      }
+
       res.status(200).json(diagnosticInfo);
     } catch (error: any) {
       res.status(500).json({
@@ -139,6 +184,22 @@ async function startServer() {
   app.get("/diagnostics/text", async (req, res) => {
     try {
       const diagnosticInfo = await diagnoseDatabaseConnection();
+
+      // 在生产环境中，过滤掉敏感信息
+      if (process.env.NODE_ENV === "production") {
+        // 移除或模糊化敏感信息
+        if (
+          diagnosticInfo.env_variables &&
+          diagnosticInfo.env_variables.DATABASE_URL
+        ) {
+          diagnosticInfo.env_variables.DATABASE_URL =
+            diagnosticInfo.env_variables.DATABASE_URL.replace(
+              /:[^:@]+@/,
+              ":****@"
+            );
+        }
+      }
+
       const formattedOutput = formatDiagnosticInfo(diagnosticInfo);
       res.setHeader("Content-Type", "text/plain");
       res.status(200).send(formattedOutput);
