@@ -13,7 +13,7 @@ RUN npm install -g pnpm
 # Install all dependencies (including devDependencies)
 RUN pnpm install
 
-# Copy source code
+# Copy source code and prisma schema
 COPY . .
 
 # Generate Prisma client
@@ -30,6 +30,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
+COPY prisma ./prisma
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -39,8 +40,9 @@ RUN pnpm install --prod
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Generate Prisma Client in production
+RUN pnpm prisma generate
 
 # Expose the port the app runs on
 EXPOSE 8080
