@@ -29,7 +29,7 @@ const logger = winston.createLogger({
 function getDatabaseInfo() {
   const isProduction = process.env.NODE_ENV === "production";
 
-  // 在生产环境中，不返回完整的 DATABASE_URL，而是返回组成部分
+  // 在生产环境中，不使用 DATABASE_URL，而是使用单独的环境变量
   if (isProduction) {
     return {
       user: process.env.DB_USER || "unknown",
@@ -43,7 +43,7 @@ function getDatabaseInfo() {
       }`,
     };
   } else {
-    // 非生产环境，仍然隐藏密码
+    // 非生产环境，仍然使用 DATABASE_URL 但隐藏密码
     return {
       connectionString: process.env.DATABASE_URL
         ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")

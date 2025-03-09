@@ -10,6 +10,8 @@ const execPromise = util.promisify(exec);
  * @returns 包含诊断信息的对象
  */
 export async function diagnoseDatabaseConnection() {
+  const isProduction = process.env.NODE_ENV === "production";
+
   const diagnosticInfo: any = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "unknown",
@@ -25,11 +27,6 @@ export async function diagnoseDatabaseConnection() {
       memory_usage: process.memoryUsage(),
     },
     env_variables: {
-      DATABASE_URL: process.env.DATABASE_URL
-        ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
-        : "Not set",
-      INSTANCE_CONNECTION_NAME:
-        process.env.INSTANCE_CONNECTION_NAME || "Not set",
       PORT: process.env.PORT || "Not set",
     },
     cloud_sql: {
@@ -39,6 +36,29 @@ export async function diagnoseDatabaseConnection() {
         : "Unknown",
     },
   };
+
+  // 根据环境添加不同的环境变量信息
+  if (isProduction) {
+    // 生产环境：检查单独的环境变量
+    diagnosticInfo.env_variables.DB_USER = process.env.DB_USER
+      ? "已设置"
+      : "Not set";
+    diagnosticInfo.env_variables.DB_NAME = process.env.DB_NAME
+      ? "已设置"
+      : "Not set";
+    diagnosticInfo.env_variables.DB_PASS = process.env.DB_PASS
+      ? "已设置"
+      : "Not set";
+    diagnosticInfo.env_variables.INSTANCE_CONNECTION_NAME =
+      process.env.INSTANCE_CONNECTION_NAME || "Not set";
+  } else {
+    // 非生产环境：检查 DATABASE_URL
+    diagnosticInfo.env_variables.DATABASE_URL = process.env.DATABASE_URL
+      ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
+      : "Not set";
+    diagnosticInfo.env_variables.INSTANCE_CONNECTION_NAME =
+      process.env.INSTANCE_CONNECTION_NAME || "Not set";
+  }
 
   // 检查 socket 目录
   if (diagnosticInfo.cloud_sql.socket_dir_exists) {
@@ -100,8 +120,8 @@ export async function diagnoseDatabaseConnection() {
     };
   }
 
-  // 检查 DNS 解析
-  if (process.env.DATABASE_URL) {
+  // 检查 DNS 解析（仅在非生产环境或使用 TCP 连接时）
+  if (!isProduction && process.env.DATABASE_URL) {
     const dbUrlMatch = process.env.DATABASE_URL.match(/@([^:/?]+)/);
     if (dbUrlMatch && dbUrlMatch[1] && dbUrlMatch[1] !== "localhost") {
       try {
@@ -137,21 +157,51 @@ function analyzeConnectionIssues(info: any) {
     recommendations: [] as string[],
   };
 
-  // 检查环境变量
-  if (
-    !info.env_variables.DATABASE_URL ||
-    info.env_variables.DATABASE_URL === "Not set"
-  ) {
-    analysis.possible_issues.push("DATABASE_URL 环境变量未设置");
-    analysis.recommendations.push("设置 DATABASE_URL 环境变量");
-  } else if (
-    info.env_variables.DATABASE_URL.includes(":5432") &&
-    info.env_variables.DATABASE_URL.includes("/cloudsql")
-  ) {
-    analysis.possible_issues.push(
-      "DATABASE_URL 中的 Unix socket 路径包含端口号"
-    );
-    analysis.recommendations.push("移除 Unix socket 路径中的端口号 (:5432)");
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // 根据环境检查不同的环境变量
+  if (isProduction) {
+    // 生产环境：检查单独的环境变量
+    if (
+      !info.env_variables.DB_USER ||
+      info.env_variables.DB_USER === "Not set"
+    ) {
+      analysis.possible_issues.push("DB_USER 环境变量未设置");
+      analysis.recommendations.push("设置 DB_USER 环境变量");
+    }
+
+    if (
+      !info.env_variables.DB_NAME ||
+      info.env_variables.DB_NAME === "Not set"
+    ) {
+      analysis.possible_issues.push("DB_NAME 环境变量未设置");
+      analysis.recommendations.push("设置 DB_NAME 环境变量");
+    }
+
+    if (
+      !info.env_variables.DB_PASS ||
+      info.env_variables.DB_PASS === "Not set"
+    ) {
+      analysis.possible_issues.push("DB_PASS 环境变量未设置");
+      analysis.recommendations.push("设置 DB_PASS 环境变量");
+    }
+  } else {
+    // 非生产环境：检查 DATABASE_URL
+    if (
+      !info.env_variables.DATABASE_URL ||
+      info.env_variables.DATABASE_URL === "Not set"
+    ) {
+      analysis.possible_issues.push("DATABASE_URL 环境变量未设置");
+      analysis.recommendations.push("设置 DATABASE_URL 环境变量");
+    } else if (
+      info.env_variables.DATABASE_URL.includes(":5432") &&
+      info.env_variables.DATABASE_URL.includes("/cloudsql")
+    ) {
+      analysis.possible_issues.push(
+        "DATABASE_URL 中的 Unix socket 路径包含端口号"
+      );
+      analysis.recommendations.push("移除 Unix socket 路径中的端口号 (:5432)");
+    }
   }
 
   if (
