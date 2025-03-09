@@ -3,22 +3,35 @@ name: Build and Push to Docker Hub
 on:
   workflow_dispatch: # 允许手动触发
 
+# 明确指定权限
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    # 如果你有环境级别的 secrets，取消下面的注释并指定环境名称
-    # environment: production
+    # 指定环境名称
+    environment: "default"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List available secrets (不会显示实际值)
+      - name: Echo secrets availability
         run: |
-          echo "可用的 secrets 列表（只显示名称，不显示值）："
-          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' && '已设置' || '未设置' }}"
-          echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME != '' && '已设置' || '未设置' }}"
-          echo "DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN != '' && '已设置' || '未设置' }}"
+          echo "检查 secrets 是否可用（不显示实际值）："
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "DOCKERHUB_USERNAME 已设置"
+          else
+            echo "DOCKERHUB_USERNAME 未设置"
+          fi
+
+          if [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "DOCKERHUB_TOKEN 已设置"
+          else
+            echo "DOCKERHUB_TOKEN 未设置"
+          fi
 
       # 使用固定的用户名
       - name: Set up Docker Buildx
@@ -27,7 +40,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: walkcat
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate build timestamp
@@ -40,7 +53,7 @@ jobs:
           context: .
           push: true
           tags: |
-            walkcat/gcp-graph-server:latest
-            walkcat/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/gcp-graph-server:${{ steps.timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
