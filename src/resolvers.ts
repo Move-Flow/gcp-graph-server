@@ -124,47 +124,4 @@ export const resolvers = {
       });
     },
   },
-
-  Mutation: {
-    createDailyPoint: async (_: unknown, args: DailyPointInput) => {
-      const dailyPoint = await prisma.dailyPoint.create({
-        data: {
-          user_id: args.user_id,
-          stake_usd: args.stake_usd,
-          debt_usd: args.debt_usd,
-          blend_lend: args.blend_lend,
-          blend_borrow: args.blend_borrow,
-          yuzu_lend: args.yuzu_lend,
-          yuzu_borrow: args.yuzu_borrow,
-          blend_point: args.blend_point,
-          yuzu_point: args.yuzu_point,
-          send_date: args.send_date,
-        },
-      });
-      return dailyPoint;
-    },
-
-    updateUserSummary: async (_: unknown, args: UserSummaryInput) => {
-      return prisma.userSummary.upsert({
-        where: { user_id: args.user_id },
-        update: {
-          blend_lend: args.blend_lend,
-          blend_borrow: args.blend_borrow,
-          yuzu_lend: args.yuzu_lend,
-          yuzu_borrow: args.yuzu_borrow,
-          blend_point: args.blend_point,
-          yuzu_point: args.yuzu_point,
-        },
-        create: {
-          user_id: args.user_id,
-          blend_lend: args.blend_lend,
-          blend_borrow: args.blend_borrow,
-          yuzu_lend: args.yuzu_lend,
-          yuzu_borrow: args.yuzu_borrow,
-          blend_point: args.blend_point,
-          yuzu_point: args.yuzu_point,
-        },
-      });
-    },
-  },
 };
