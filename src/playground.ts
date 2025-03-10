@@ -1,17 +1,20 @@
 export const playgrounHTML = `
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>GraphQL Playground</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@apollo/sandbox/dist/index.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Sandbox Playground</title>
 </head>
-<body style="margin: 0; overflow-x: hidden; overflow-y: hidden">
-    <div style="width: 100vw; height: 100vh;" id="sandbox"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@apollo/sandbox/dist/index.umd.js"></script>
+<body>
+    <div id="sandbox" style="height: 100vh;"></div>
+    <script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
     <script>
+        // Initialize the Apollo Sandbox
         new window.EmbeddedSandbox({
             target: '#sandbox',
-            initialEndpoint: '/graphql',
+            initialEndpoint: '/graphql', // Replace with your GraphQL endpoint
         });
     </script>
 </body>
