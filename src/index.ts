@@ -13,6 +13,12 @@ import {
 } from "./utils/diagnostics";
 import { exec } from "child_process";
 import util from "util";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Promisify exec
 const execPromise = util.promisify(exec);
@@ -80,6 +86,25 @@ async function startServer() {
   // Apply middleware
   app.use(cors());
   app.use(express.json());
+
+  // Serve static files from public directory
+  app.use(express.static(path.join(__dirname, "public")));
+
+  // GraphQL Playground route
+  app.get("/playground", (req, res) => {
+    // 检查是否允许访问 playground
+    if (
+      process.env.NODE_ENV === "production" &&
+      !process.env.ALLOW_PLAYGROUND
+    ) {
+      return res.status(403).json({
+        status: "error",
+        message:
+          "GraphQL Playground is disabled in production. Set ALLOW_PLAYGROUND=true to enable it.",
+      });
+    }
+    res.sendFile(path.join(__dirname, "public", "graphql.html"));
+  });
 
   // Apply Apollo middleware
   app.use("/graphql", expressMiddleware(server));
@@ -382,6 +407,9 @@ async function startServer() {
   // Start server
   app.listen(port, () => {
     logger.info(`🚀 Server ready at http://localhost:${port}/graphql`);
+    logger.info(
+      `📝 GraphQL Playground available at http://localhost:${port}/playground`
+    );
     logger.info(`Health check available at http://localhost:${port}/health`);
     logger.info(`Default route with DB status at http://localhost:${port}/`);
     logger.info(
