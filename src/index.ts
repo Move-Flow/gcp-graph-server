@@ -32,51 +32,18 @@ const logger = winston.createLogger({
 
 // 安全地获取数据库连接信息，不直接暴露完整的 DATABASE_URL
 function getDatabaseInfo() {
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // 在生产环境中，不使用 DATABASE_URL，而是使用单独的环境变量
-  if (isProduction) {
-    // 修正 connection string 拼接逻辑，确保格式正确
-    const connectionString = `postgresql://${
-      process.env.DB_USER || "unknown"
-    }:${process.env.DB_PASS || "password"}@localhost/${
-      process.env.DB_NAME || "unknown"
-    }?host=/cloudsql/${process.env.INSTANCE_CONNECTION_NAME || "unknown"}`;
-
-    // 返回信息时隐藏密码
-    const maskedConnectionString = connectionString.replace(
-      /:[^:@]+@/,
-      ":****@"
-    );
-
-    return {
-      user: process.env.DB_USER || "unknown",
-      database: process.env.DB_NAME || "unknown",
-      instanceName: process.env.INSTANCE_CONNECTION_NAME || "unknown",
-      connectionString: maskedConnectionString,
-    };
-  } else {
-    // 非生产环境，仍然使用 DATABASE_URL 但隐藏密码
-    return {
-      connectionString: process.env.DATABASE_URL
-        ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@")
-        : "Not configured",
-      instanceName: process.env.INSTANCE_CONNECTION_NAME || "Not configured",
-    };
-  }
+  // 返回信息时隐藏密码
+  return {
+    user: process.env.DB_USER || "unknown",
+    database: process.env.DB_NAME || "unknown",
+    host: process.env.DB_HOST || "unknown",
+    port: process.env.DB_PORT || "5432",
+  };
 }
 
 // 获取数据库连接字符串（包含密码，仅用于内部连接）
 function getDatabaseUrl() {
-  const isProduction = process.env.NODE_ENV === "production";
-
-  if (isProduction) {
-    // 在生产环境中，使用单独的环境变量构建连接字符串
-    return `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@localhost/${process.env.DB_NAME}?host=/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
-  } else {
-    // 在非生产环境中，使用 DATABASE_URL 环境变量
-    return process.env.DATABASE_URL;
-  }
+  return `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 }
 
 // Initialize Prisma client with the correct connection string
