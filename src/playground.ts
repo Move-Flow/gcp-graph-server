@@ -1,3 +1,4 @@
+export const playgrounHTML = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,4 +15,5 @@
         });
     </script>
 </body>
-</html> 
+</html>
+`;

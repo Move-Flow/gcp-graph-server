@@ -15,7 +15,7 @@ import { exec } from "child_process";
 import util from "util";
 import path from "path";
 import { fileURLToPath } from "url";
-
+import { playgrounHTML } from "./playground.js";
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,7 +103,12 @@ async function startServer() {
           "GraphQL Playground is disabled in production. Set ALLOW_PLAYGROUND=true to enable it.",
       });
     }
-    res.sendFile(path.join(__dirname, "public", "graphql.html"));
+
+    // 直接返回内联的 HTML
+    const html = playgrounHTML;
+
+    res.setHeader("Content-Type", "text/html");
+    res.send(html);
   });
 
   // Apply Apollo middleware
