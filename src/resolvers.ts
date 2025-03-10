@@ -62,6 +62,9 @@ export const resolvers = {
         _count: {
           user_id: true,
         },
+        orderBy: {
+          send_date: "desc",
+        },
       });
 
       return results.map((result) => ({
