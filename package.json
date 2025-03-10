@@ -1,20 +1,21 @@
 {
   "name": "gcp-graph-server",
   "version": "1.0.0",
+  "description": "GraphQL server and client for testing",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "NODE_OPTIONS='--loader ts-node/esm' ts-node-dev --respawn src/index.ts",
     "build": "tsc",
     "test": "mocha --require ts-node/register test/*/*.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "client": "ts-node client.ts"
+    "client": "NODE_OPTIONS='--loader ts-node/esm' ts-node client.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@apollo/server": "^4.10.0",
     "@google-cloud/cloud-sql-connector": "^1.2.0",

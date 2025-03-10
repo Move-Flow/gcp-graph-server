@@ -4,13 +4,13 @@ import express from "express";
 import { config } from "dotenv";
 import winston from "winston";
 import cors from "cors";
-import { typeDefs } from "./schema";
-import { resolvers } from "./resolvers";
+import { typeDefs } from "./schema.js";
+import { resolvers } from "./resolvers.js";
 import { PrismaClient } from "@prisma/client";
 import {
   diagnoseDatabaseConnection,
   formatDiagnosticInfo,
-} from "./utils/diagnostics";
+} from "./utils/diagnostics.js";
 import { exec } from "child_process";
 import util from "util";
 import path from "path";
