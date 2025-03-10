@@ -29,7 +29,7 @@ export const typeDefs = `#graphql
   type Query {
     dailyPoints(userId: String!, startDate: String, endDate: String): [DailyPoint!]!
     userSummary(userId: String!): UserSummary
-    topUsers(limit: Int!, orderBy: String!): [UserSummary!]!
+    topUsers(limit: Int!, orderBy: String!,orderByDirection: String!): [UserSummary!]!
   }
 
   type Mutation {

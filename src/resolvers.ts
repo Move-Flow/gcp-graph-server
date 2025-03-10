@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "./utils/loader.js";
 
 interface DailyPointInput {
   user_id: string;
@@ -49,19 +47,23 @@ export const resolvers = {
     },
 
     userSummary: async (_: unknown, { userId }: { userId: string }) => {
+      const user_id = userId.toLowerCase();
       return prisma.userSummary.findUnique({
-        where: { user_id: userId },
+        where: { user_id: user_id },
       });
     },
 
     topUsers: async (
       _: unknown,
-      { limit, orderBy }: { limit: number; orderBy: string }
+      {
+        limit,
+        orderBy,
+        orderByDirection,
+      }: { limit: number; orderBy: string; orderByDirection: string }
     ) => {
-      const orderField = orderBy === "BLEND" ? "blend_point" : "yuzu_point";
       return prisma.userSummary.findMany({
         take: limit,
-        orderBy: { [orderField]: "desc" },
+        orderBy: { [orderBy]: orderByDirection },
       });
     },
   },

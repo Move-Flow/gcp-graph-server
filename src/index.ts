@@ -6,7 +6,6 @@ import winston from "winston";
 import cors from "cors";
 import { typeDefs } from "./schema.js";
 import { resolvers } from "./resolvers.js";
-import { PrismaClient } from "@prisma/client";
 import {
   diagnoseDatabaseConnection,
   formatDiagnosticInfo,
@@ -16,6 +15,9 @@ import util from "util";
 import path from "path";
 import { fileURLToPath } from "url";
 import { playgrounHTML } from "./playground.js";
+
+import { prisma } from "./utils/loader.js";
+
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,20 +48,6 @@ function getDatabaseInfo() {
     port: process.env.DB_PORT || "5432",
   };
 }
-
-// 获取数据库连接字符串（包含密码，仅用于内部连接）
-function getDatabaseUrl() {
-  return `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
-}
-
-// Initialize Prisma client with the correct connection string
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: getDatabaseUrl(),
-    },
-  },
-});
 
 // Log database connection information (without sensitive data)
 logger.info(`Database connection info: ${JSON.stringify(getDatabaseInfo())}`);
