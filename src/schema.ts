@@ -50,6 +50,7 @@ export const typeDefs = `#graphql
     total_blend_borrow: Float!
     total_yuzu_lend: Float!
     total_yuzu_borrow: Float!
+    daily_count: Int!
   }
 
   type Query {

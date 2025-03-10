@@ -59,6 +59,9 @@ export const resolvers = {
           yuzu_lend: true,
           yuzu_borrow: true,
         },
+        _count: {
+          user_id: true,
+        },
       });
 
       return results.map((result) => ({
@@ -71,6 +74,7 @@ export const resolvers = {
         total_blend_borrow: result._sum.blend_borrow || 0,
         total_yuzu_lend: result._sum.yuzu_lend || 0,
         total_yuzu_borrow: result._sum.yuzu_borrow || 0,
+        daily_count: result._count.user_id,
       }));
     },
 
