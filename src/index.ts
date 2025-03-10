@@ -71,6 +71,7 @@ async function startServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    introspection: true, // 始终启用内省，允许 Playground 访问
   });
 
   // Start Apollo Server
