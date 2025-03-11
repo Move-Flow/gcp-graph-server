@@ -110,19 +110,15 @@ export const resolvers = {
       });
     },
 
-    lastSendPoint: async (_: unknown, { userId }: { userId: string }) => {
-      if (!userId) {
-        return prisma.dailyPoint.findFirst({
-          where: {
-            user_id: userId.toLowerCase(),
-          },
-          orderBy: { last_time: "desc" },
-        });
-      } else {
-        return prisma.dailyPoint.findFirst({
-          orderBy: { last_time: "desc" },
-        });
-      }
+    lastSendPoint: async (_: any, { userId }: { userId?: string }) => {
+      const where = userId ? { user_id: userId } : undefined;
+
+      return prisma.dailyPoint.findFirst({
+        where,
+        orderBy: {
+          last_time: "desc",
+        },
+      });
     },
 
     topUsers: async (
