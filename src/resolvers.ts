@@ -110,6 +110,14 @@ export const resolvers = {
       });
     },
 
+    lastSendPoint: async (_: unknown, { userId }: { userId: string }) => {
+      const user_id = userId.toLowerCase();
+      return prisma.dailyPoint.findFirst({
+        where: { user_id: user_id },
+        orderBy: { last_time: "desc" },
+      });
+    },
+
     topUsers: async (
       _: unknown,
       {

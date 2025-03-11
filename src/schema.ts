@@ -54,6 +54,7 @@ export const typeDefs = `#graphql
   }
 
   type Query {
+    lastSendPoint(userId: String!): DailyPoint
     dailyPoints(userId: String!, startDate: String, endDate: String): [DailyPoint!]!
     dailyPointByDate: [DailyPointSummary!]!
     userSummary(userId: String!): UserSummary
