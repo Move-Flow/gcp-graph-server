@@ -111,11 +111,18 @@ export const resolvers = {
     },
 
     lastSendPoint: async (_: unknown, { userId }: { userId: string }) => {
-      const user_id = userId.toLowerCase();
-      return prisma.dailyPoint.findFirst({
-        where: { user_id: user_id },
-        orderBy: { last_time: "desc" },
-      });
+      if (!userId) {
+        return prisma.dailyPoint.findFirst({
+          where: {
+            user_id: userId.toLowerCase(),
+          },
+          orderBy: { last_time: "desc" },
+        });
+      } else {
+        return prisma.dailyPoint.findFirst({
+          orderBy: { last_time: "desc" },
+        });
+      }
     },
 
     topUsers: async (
