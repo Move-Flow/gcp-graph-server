@@ -39,6 +39,7 @@ model UserSummary {
   blend_point  Float
   yuzu_point   Float
   last_time    DateTime @default(now())
+  rank         Int
 
   @@index([user_id])
   @@index([last_time])

@@ -24,6 +24,7 @@ export const typeDefs = `#graphql
     blend_point: Float!
     yuzu_point: Float!
     last_time: String!
+    rank: Int
   }
 
   type PointSummary {
